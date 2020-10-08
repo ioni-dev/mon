@@ -14,7 +14,8 @@ defmodule Mon.Repo.Migrations.CreateUsersAuthTables do
       add :active, :boolean, null: false, default: true
       add :last_logged_in, :utc_datetime, [null: false, default: fragment("current_date")]
       add :pic, :string
-      add :company_uuid, references(:companies, type: :uuid, column: :uuid, on_delete: :delete_all), null: false
+      add :company_uuid, :uuid
+      # add :company_uuid, references(:companies, type: :uuid, column: :uuid, on_delete: :delete_all), null: false
       timestamps(type: :utc_datetime)
     end
 
