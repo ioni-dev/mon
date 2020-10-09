@@ -30,7 +30,7 @@ defmodule Mon.Repo.Migrations.CreateUsersAuthTables do
       add :emergency_contact, :map, null: false
       add :work_reference, {:array, :map}, null: false
       add :referred_contact, {:array, :map}, null: false
-      add :vehicle_uuid, :uuid, null: false
+      add :organization_uuid, :uuid, null: false
       timestamps(type: :utc_datetime)
     end
 
@@ -45,6 +45,6 @@ defmodule Mon.Repo.Migrations.CreateUsersAuthTables do
 
     create index(:users_tokens, [:user_uuid])
     create unique_index(:users_tokens, [:context, :token])
-
+    create unique_index(:users, [:email, :organization_uuid])
   end
 end
