@@ -1,6 +1,10 @@
 defmodule MonWeb.Router do
   use MonWeb, :router
 
+  import MonWeb.OrganizationAuth
+
+  import MonWeb.ClientAuth
+
   import MonWeb.UserAuth
 
   pipeline :browser do
@@ -9,6 +13,8 @@ defmodule MonWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_organization
+    plug :fetch_current_client
     plug :fetch_current_user
   end
 
@@ -74,5 +80,71 @@ defmodule MonWeb.Router do
     get "/users/confirm", UserConfirmationController, :new
     post "/users/confirm", UserConfirmationController, :create
     get "/users/confirm/:token", UserConfirmationController, :confirm
+  end
+
+  ## Authentication routes
+
+  scope "/", MonWeb do
+    pipe_through [:browser, :redirect_if_client_is_authenticated]
+
+    get "/clients/register", ClientRegistrationController, :new
+    post "/clients/register", ClientRegistrationController, :create
+    get "/clients/log_in", ClientSessionController, :new
+    post "/clients/log_in", ClientSessionController, :create
+    get "/clients/reset_password", ClientResetPasswordController, :new
+    post "/clients/reset_password", ClientResetPasswordController, :create
+    get "/clients/reset_password/:token", ClientResetPasswordController, :edit
+    put "/clients/reset_password/:token", ClientResetPasswordController, :update
+  end
+
+  scope "/", MonWeb do
+    pipe_through [:browser, :require_authenticated_client]
+
+    get "/clients/settings", ClientSettingsController, :edit
+    put "/clients/settings/update_password", ClientSettingsController, :update_password
+    put "/clients/settings/update_email", ClientSettingsController, :update_email
+    get "/clients/settings/confirm_email/:token", ClientSettingsController, :confirm_email
+  end
+
+  scope "/", MonWeb do
+    pipe_through [:browser]
+
+    delete "/clients/log_out", ClientSessionController, :delete
+    get "/clients/confirm", ClientConfirmationController, :new
+    post "/clients/confirm", ClientConfirmationController, :create
+    get "/clients/confirm/:token", ClientConfirmationController, :confirm
+  end
+
+  ## Authentication routes
+
+  scope "/", MonWeb do
+    pipe_through [:browser, :redirect_if_organization_is_authenticated]
+
+    get "/organizations/register", OrganizationRegistrationController, :new
+    post "/organizations/register", OrganizationRegistrationController, :create
+    get "/organizations/log_in", OrganizationSessionController, :new
+    post "/organizations/log_in", OrganizationSessionController, :create
+    get "/organizations/reset_password", OrganizationResetPasswordController, :new
+    post "/organizations/reset_password", OrganizationResetPasswordController, :create
+    get "/organizations/reset_password/:token", OrganizationResetPasswordController, :edit
+    put "/organizations/reset_password/:token", OrganizationResetPasswordController, :update
+  end
+
+  scope "/", MonWeb do
+    pipe_through [:browser, :require_authenticated_organization]
+
+    get "/organizations/settings", OrganizationSettingsController, :edit
+    put "/organizations/settings/update_password", OrganizationSettingsController, :update_password
+    put "/organizations/settings/update_email", OrganizationSettingsController, :update_email
+    get "/organizations/settings/confirm_email/:token", OrganizationSettingsController, :confirm_email
+  end
+
+  scope "/", MonWeb do
+    pipe_through [:browser]
+
+    delete "/organizations/log_out", OrganizationSessionController, :delete
+    get "/organizations/confirm", OrganizationConfirmationController, :new
+    post "/organizations/confirm", OrganizationConfirmationController, :create
+    get "/organizations/confirm/:token", OrganizationConfirmationController, :confirm
   end
 end

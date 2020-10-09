@@ -12,6 +12,8 @@ defmodule Mon.Repo.Migrations.CreateVehicle do
 
     execute("CREATE TYPE operation_type AS ENUM ('Local', 'First mile', 'Last mile', 'Metropolitan', 'National')")
 
+    execute "CREATE EXTENSION IF NOT EXISTS citext", ""
+
     create table(:vehicles, primary_key: false) do
       add :uuid, :uuid, primary_key: true
       add :type, :vehicle_type, null: false
@@ -19,9 +21,19 @@ defmodule Mon.Repo.Migrations.CreateVehicle do
       add :plate, :string, null: false
       add :payload_type, :payload_type, null: false
       add :operation_type, :operation_type, null: false
-      # Todo: add to user(employee) certifications | satellital certification | tarjeta de propiedad del vehiculo |
-      add :address, :string, null: false
-      add :contact_info, :map, null: false
+      add :certificate_of_title, {:array, :map}, null: false
+      add :insurance, :string, null: false
+      add :inspection_sticker, :string , null: false
+      add :photos, {:array, :map}, null: false
+      add :trailer_plate, :string, null: false
+      add :trailer_photo, :string, null: true
+      add :trailer_certificate_of_title, {:array, :map}, null: true
+      add :owner_email, :citext, null: false
+      add :owner_address, :string, null: false
+      add :owner_id_number, :string, null: true
+      add :owner_phone, :string, null: false
+      add :owner_taxpayer_id, :map, null: true
+      add :owner_identification, {:array, :map}, null: true
       timestamps(type: :utc_datetime)
     end
   end
