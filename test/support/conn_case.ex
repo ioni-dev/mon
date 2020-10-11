@@ -40,4 +40,82 @@ defmodule MonWeb.ConnCase do
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Setup helper that registers and logs in drivers.
+
+      setup :register_and_log_in_driver
+
+  It stores an updated connection and a registered driver in the
+  test context.
+  """
+  def register_and_log_in_driver(%{conn: conn}) do
+    driver = Mon.AccountsFixtures.driver_fixture()
+    %{conn: log_in_driver(conn, driver), driver: driver}
+  end
+
+  @doc """
+  Logs the given `driver` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_driver(conn, driver) do
+    token = Mon.Accounts.generate_driver_session_token(driver)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:driver_token, token)
+  end
+
+  @doc """
+  Setup helper that registers and logs in clients.
+
+      setup :register_and_log_in_client
+
+  It stores an updated connection and a registered client in the
+  test context.
+  """
+  def register_and_log_in_client(%{conn: conn}) do
+    client = Mon.AccountsFixtures.client_fixture()
+    %{conn: log_in_client(conn, client), client: client}
+  end
+
+  @doc """
+  Logs the given `client` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_client(conn, client) do
+    token = Mon.Accounts.generate_client_session_token(client)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:client_token, token)
+  end
+
+  @doc """
+  Setup helper that registers and logs in organizations.
+
+      setup :register_and_log_in_organization
+
+  It stores an updated connection and a registered organization in the
+  test context.
+  """
+  def register_and_log_in_organization(%{conn: conn}) do
+    organization = Mon.AccountsFixtures.organization_fixture()
+    %{conn: log_in_organization(conn, organization), organization: organization}
+  end
+
+  @doc """
+  Logs the given `organization` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_organization(conn, organization) do
+    token = Mon.Accounts.generate_organization_session_token(organization)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:organization_token, token)
+  end
 end

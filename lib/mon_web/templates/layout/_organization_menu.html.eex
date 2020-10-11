@@ -1,0 +1,10 @@
+<ul>
+<%= if @current_organization do %>
+  <li><%= @current_organization.email %></li>
+  <li><%= link "Settings", to: Routes.organization_settings_path(@conn, :edit) %></li>
+  <li><%= link "Log out", to: Routes.organization_session_path(@conn, :delete), method: :delete %></li>
+<% else %>
+  <li><%= link "Register", to: Routes.organization_registration_path(@conn, :new) %></li>
+  <li><%= link "Log in", to: Routes.organization_session_path(@conn, :new) %></li>
+<% end %>
+</ul>
