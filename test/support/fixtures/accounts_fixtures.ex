@@ -4,22 +4,22 @@ defmodule Mon.AccountsFixtures do
   entities via the `Mon.Accounts` context.
   """
 
-  def unique_driver_email, do: "driver#{System.unique_integer()}@example.com"
-  def valid_driver_password, do: "hello world!"
+  def unique_user_email, do: "user#{System.unique_integer()}@example.com"
+  def valid_user_password, do: "hello world!"
 
-  def driver_fixture(attrs \\ %{}) do
-    {:ok, driver} =
+  def user_fixture(attrs \\ %{}) do
+    {:ok, user} =
       attrs
       |> Enum.into(%{
-        email: unique_driver_email(),
-        password: valid_driver_password()
+        email: unique_user_email(),
+        password: valid_user_password()
       })
-      |> Mon.Accounts.register_driver()
+      |> Mon.Accounts.register_user()
 
-    driver
+    user
   end
 
-  def extract_driver_token(fun) do
+  def extract_user_token(fun) do
     {:ok, captured} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token, _] = String.split(captured.body, "[TOKEN]")
     token

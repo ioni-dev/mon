@@ -1,9 +1,9 @@
-defmodule Mon.Accounts.Client do
+defmodule Mon.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
   @derive {Inspect, except: [:password]}
-  schema "clients" do
+  schema "users" do
     field :email, :string
     field :password, :string, virtual: true
     field :hashed_password, :string
@@ -13,15 +13,15 @@ defmodule Mon.Accounts.Client do
   end
 
   @doc """
-  A client changeset for registration.
+  A user changeset for registration.
 
   It is important to validate the length of both email and password.
   Otherwise databases may truncate the email without warnings, which
   could lead to unpredictable or insecure behaviour. Long passwords may
   also be very expensive to hash for certain algorithms.
   """
-  def registration_changeset(client, attrs) do
-    client
+  def registration_changeset(user, attrs) do
+    user
     |> cast(attrs, [:email, :password])
     |> validate_email()
     |> validate_password()
@@ -50,17 +50,17 @@ defmodule Mon.Accounts.Client do
     password = get_change(changeset, :password)
 
     changeset
-    |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
+    |> put_change(:hashed_password, Pbkdf2.hash_pwd_salt(password))
     |> delete_change(:password)
   end
 
   @doc """
-  A client changeset for changing the email.
+  A user changeset for changing the email.
 
   It requires the email to change otherwise an error is added.
   """
-  def email_changeset(client, attrs) do
-    client
+  def email_changeset(user, attrs) do
+    user
     |> cast(attrs, [:email])
     |> validate_email()
     |> case do
@@ -70,10 +70,10 @@ defmodule Mon.Accounts.Client do
   end
 
   @doc """
-  A client changeset for changing the password.
+  A user changeset for changing the password.
   """
-  def password_changeset(client, attrs) do
-    client
+  def password_changeset(user, attrs) do
+    user
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password()
@@ -82,24 +82,24 @@ defmodule Mon.Accounts.Client do
   @doc """
   Confirms the account by setting `confirmed_at`.
   """
-  def confirm_changeset(client) do
+  def confirm_changeset(user) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    change(client, confirmed_at: now)
+    change(user, confirmed_at: now)
   end
 
   @doc """
   Verifies the password.
 
-  If there is no client or the client doesn't have a password, we call
-  `Bcrypt.no_user_verify/0` to avoid timing attacks.
+  If there is no user or the user doesn't have a password, we call
+  `Pbkdf2.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%Mon.Accounts.Client{hashed_password: hashed_password}, password)
+  def valid_password?(%Mon.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
-    Bcrypt.verify_pass(password, hashed_password)
+    Pbkdf2.verify_pass(password, hashed_password)
   end
 
   def valid_password?(_, _) do
-    Bcrypt.no_user_verify()
+    Pbkdf2.no_user_verify()
     false
   end
 

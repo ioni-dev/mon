@@ -42,29 +42,29 @@ defmodule MonWeb.ConnCase do
   end
 
   @doc """
-  Setup helper that registers and logs in drivers.
+  Setup helper that registers and logs in users.
 
-      setup :register_and_log_in_driver
+      setup :register_and_log_in_user
 
-  It stores an updated connection and a registered driver in the
+  It stores an updated connection and a registered user in the
   test context.
   """
-  def register_and_log_in_driver(%{conn: conn}) do
-    driver = Mon.AccountsFixtures.driver_fixture()
-    %{conn: log_in_driver(conn, driver), driver: driver}
+  def register_and_log_in_user(%{conn: conn}) do
+    user = Mon.AccountsFixtures.user_fixture()
+    %{conn: log_in_user(conn, user), user: user}
   end
 
   @doc """
-  Logs the given `driver` into the `conn`.
+  Logs the given `user` into the `conn`.
 
   It returns an updated `conn`.
   """
-  def log_in_driver(conn, driver) do
-    token = Mon.Accounts.generate_driver_session_token(driver)
+  def log_in_user(conn, user) do
+    token = Mon.Accounts.generate_user_session_token(user)
 
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:driver_token, token)
+    |> Plug.Conn.put_session(:user_token, token)
   end
 
   @doc """

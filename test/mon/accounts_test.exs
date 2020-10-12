@@ -3,53 +3,53 @@ defmodule Mon.AccountsTest do
 
   alias Mon.Accounts
   import Mon.AccountsFixtures
-  alias Mon.Accounts.{Driver, DriverToken}
+  alias Mon.Accounts.{User, UserToken}
 
-  describe "get_driver_by_email/1" do
-    test "does not return the driver if the email does not exist" do
-      refute Accounts.get_driver_by_email("unknown@example.com")
+  describe "get_user_by_email/1" do
+    test "does not return the user if the email does not exist" do
+      refute Accounts.get_user_by_email("unknown@example.com")
     end
 
-    test "returns the driver if the email exists" do
-      %{id: id} = driver = driver_fixture()
-      assert %Driver{id: ^id} = Accounts.get_driver_by_email(driver.email)
-    end
-  end
-
-  describe "get_driver_by_email_and_password/2" do
-    test "does not return the driver if the email does not exist" do
-      refute Accounts.get_driver_by_email_and_password("unknown@example.com", "hello world!")
-    end
-
-    test "does not return the driver if the password is not valid" do
-      driver = driver_fixture()
-      refute Accounts.get_driver_by_email_and_password(driver.email, "invalid")
-    end
-
-    test "returns the driver if the email and password are valid" do
-      %{id: id} = driver = driver_fixture()
-
-      assert %Driver{id: ^id} =
-               Accounts.get_driver_by_email_and_password(driver.email, valid_driver_password())
+    test "returns the user if the email exists" do
+      %{id: id} = user = user_fixture()
+      assert %User{id: ^id} = Accounts.get_user_by_email(user.email)
     end
   end
 
-  describe "get_driver!/1" do
+  describe "get_user_by_email_and_password/2" do
+    test "does not return the user if the email does not exist" do
+      refute Accounts.get_user_by_email_and_password("unknown@example.com", "hello world!")
+    end
+
+    test "does not return the user if the password is not valid" do
+      user = user_fixture()
+      refute Accounts.get_user_by_email_and_password(user.email, "invalid")
+    end
+
+    test "returns the user if the email and password are valid" do
+      %{id: id} = user = user_fixture()
+
+      assert %User{id: ^id} =
+               Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+    end
+  end
+
+  describe "get_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_driver!("11111111-1111-1111-1111-111111111111")
+        Accounts.get_user!(-1)
       end
     end
 
-    test "returns the driver with the given id" do
-      %{id: id} = driver = driver_fixture()
-      assert %Driver{id: ^id} = Accounts.get_driver!(driver.id)
+    test "returns the user with the given id" do
+      %{id: id} = user = user_fixture()
+      assert %User{id: ^id} = Accounts.get_user!(user.id)
     end
   end
 
-  describe "register_driver/1" do
+  describe "register_user/1" do
     test "requires email and password to be set" do
-      {:error, changeset} = Accounts.register_driver(%{})
+      {:error, changeset} = Accounts.register_user(%{})
 
       assert %{
                password: ["can't be blank"],
@@ -58,7 +58,7 @@ defmodule Mon.AccountsTest do
     end
 
     test "validates email and password when given" do
-      {:error, changeset} = Accounts.register_driver(%{email: "not valid", password: "not valid"})
+      {:error, changeset} = Accounts.register_user(%{email: "not valid", password: "not valid"})
 
       assert %{
                email: ["must have the @ sign and no spaces"],
@@ -68,172 +68,172 @@ defmodule Mon.AccountsTest do
 
     test "validates maximum values for email and password for security" do
       too_long = String.duplicate("db", 100)
-      {:error, changeset} = Accounts.register_driver(%{email: too_long, password: too_long})
+      {:error, changeset} = Accounts.register_user(%{email: too_long, password: too_long})
       assert "should be at most 160 character(s)" in errors_on(changeset).email
       assert "should be at most 80 character(s)" in errors_on(changeset).password
     end
 
     test "validates email uniqueness" do
-      %{email: email} = driver_fixture()
-      {:error, changeset} = Accounts.register_driver(%{email: email})
+      %{email: email} = user_fixture()
+      {:error, changeset} = Accounts.register_user(%{email: email})
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, changeset} = Accounts.register_driver(%{email: String.upcase(email)})
+      {:error, changeset} = Accounts.register_user(%{email: String.upcase(email)})
       assert "has already been taken" in errors_on(changeset).email
     end
 
-    test "registers drivers with a hashed password" do
-      email = unique_driver_email()
-      {:ok, driver} = Accounts.register_driver(%{email: email, password: valid_driver_password()})
-      assert driver.email == email
-      assert is_binary(driver.hashed_password)
-      assert is_nil(driver.confirmed_at)
-      assert is_nil(driver.password)
+    test "registers users with a hashed password" do
+      email = unique_user_email()
+      {:ok, user} = Accounts.register_user(%{email: email, password: valid_user_password()})
+      assert user.email == email
+      assert is_binary(user.hashed_password)
+      assert is_nil(user.confirmed_at)
+      assert is_nil(user.password)
     end
   end
 
-  describe "change_driver_registration/2" do
+  describe "change_user_registration/2" do
     test "returns a changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_driver_registration(%Driver{})
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_registration(%User{})
       assert changeset.required == [:password, :email]
     end
   end
 
-  describe "change_driver_email/2" do
-    test "returns a driver changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_driver_email(%Driver{})
+  describe "change_user_email/2" do
+    test "returns a user changeset" do
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_email(%User{})
       assert changeset.required == [:email]
     end
   end
 
-  describe "apply_driver_email/3" do
+  describe "apply_user_email/3" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "requires email to change", %{driver: driver} do
-      {:error, changeset} = Accounts.apply_driver_email(driver, valid_driver_password(), %{})
+    test "requires email to change", %{user: user} do
+      {:error, changeset} = Accounts.apply_user_email(user, valid_user_password(), %{})
       assert %{email: ["did not change"]} = errors_on(changeset)
     end
 
-    test "validates email", %{driver: driver} do
+    test "validates email", %{user: user} do
       {:error, changeset} =
-        Accounts.apply_driver_email(driver, valid_driver_password(), %{email: "not valid"})
+        Accounts.apply_user_email(user, valid_user_password(), %{email: "not valid"})
 
       assert %{email: ["must have the @ sign and no spaces"]} = errors_on(changeset)
     end
 
-    test "validates maximum value for email for security", %{driver: driver} do
+    test "validates maximum value for email for security", %{user: user} do
       too_long = String.duplicate("db", 100)
 
       {:error, changeset} =
-        Accounts.apply_driver_email(driver, valid_driver_password(), %{email: too_long})
+        Accounts.apply_user_email(user, valid_user_password(), %{email: too_long})
 
       assert "should be at most 160 character(s)" in errors_on(changeset).email
     end
 
-    test "validates email uniqueness", %{driver: driver} do
-      %{email: email} = driver_fixture()
+    test "validates email uniqueness", %{user: user} do
+      %{email: email} = user_fixture()
 
       {:error, changeset} =
-        Accounts.apply_driver_email(driver, valid_driver_password(), %{email: email})
+        Accounts.apply_user_email(user, valid_user_password(), %{email: email})
 
       assert "has already been taken" in errors_on(changeset).email
     end
 
-    test "validates current password", %{driver: driver} do
+    test "validates current password", %{user: user} do
       {:error, changeset} =
-        Accounts.apply_driver_email(driver, "invalid", %{email: unique_driver_email()})
+        Accounts.apply_user_email(user, "invalid", %{email: unique_user_email()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
-    test "applies the email without persisting it", %{driver: driver} do
-      email = unique_driver_email()
-      {:ok, driver} = Accounts.apply_driver_email(driver, valid_driver_password(), %{email: email})
-      assert driver.email == email
-      assert Accounts.get_driver!(driver.id).email != email
+    test "applies the email without persisting it", %{user: user} do
+      email = unique_user_email()
+      {:ok, user} = Accounts.apply_user_email(user, valid_user_password(), %{email: email})
+      assert user.email == email
+      assert Accounts.get_user!(user.id).email != email
     end
   end
 
   describe "deliver_update_email_instructions/3" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "sends token through notification", %{driver: driver} do
+    test "sends token through notification", %{user: user} do
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_update_email_instructions(driver, "current@example.com", url)
+        extract_user_token(fn url ->
+          Accounts.deliver_update_email_instructions(user, "current@example.com", url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert driver_token = Repo.get_by(DriverToken, token: :crypto.hash(:sha256, token))
-      assert driver_token.driver_id == driver.id
-      assert driver_token.sent_to == driver.email
-      assert driver_token.context == "change:current@example.com"
+      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert user_token.user_id == user.id
+      assert user_token.sent_to == user.email
+      assert user_token.context == "change:current@example.com"
     end
   end
 
-  describe "update_driver_email/2" do
+  describe "update_user_email/2" do
     setup do
-      driver = driver_fixture()
-      email = unique_driver_email()
+      user = user_fixture()
+      email = unique_user_email()
 
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_update_email_instructions(%{driver | email: email}, driver.email, url)
+        extract_user_token(fn url ->
+          Accounts.deliver_update_email_instructions(%{user | email: email}, user.email, url)
         end)
 
-      %{driver: driver, token: token, email: email}
+      %{user: user, token: token, email: email}
     end
 
-    test "updates the email with a valid token", %{driver: driver, token: token, email: email} do
-      assert Accounts.update_driver_email(driver, token) == :ok
-      changed_driver = Repo.get!(Driver, driver.id)
-      assert changed_driver.email != driver.email
-      assert changed_driver.email == email
-      assert changed_driver.confirmed_at
-      assert changed_driver.confirmed_at != driver.confirmed_at
-      refute Repo.get_by(DriverToken, driver_id: driver.id)
+    test "updates the email with a valid token", %{user: user, token: token, email: email} do
+      assert Accounts.update_user_email(user, token) == :ok
+      changed_user = Repo.get!(User, user.id)
+      assert changed_user.email != user.email
+      assert changed_user.email == email
+      assert changed_user.confirmed_at
+      assert changed_user.confirmed_at != user.confirmed_at
+      refute Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not update email with invalid token", %{driver: driver} do
-      assert Accounts.update_driver_email(driver, "oops") == :error
-      assert Repo.get!(Driver, driver.id).email == driver.email
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not update email with invalid token", %{user: user} do
+      assert Accounts.update_user_email(user, "oops") == :error
+      assert Repo.get!(User, user.id).email == user.email
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not update email if driver email changed", %{driver: driver, token: token} do
-      assert Accounts.update_driver_email(%{driver | email: "current@example.com"}, token) == :error
-      assert Repo.get!(Driver, driver.id).email == driver.email
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not update email if user email changed", %{user: user, token: token} do
+      assert Accounts.update_user_email(%{user | email: "current@example.com"}, token) == :error
+      assert Repo.get!(User, user.id).email == user.email
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not update email if token expired", %{driver: driver, token: token} do
-      {1, nil} = Repo.update_all(DriverToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.update_driver_email(driver, token) == :error
-      assert Repo.get!(Driver, driver.id).email == driver.email
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not update email if token expired", %{user: user, token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      assert Accounts.update_user_email(user, token) == :error
+      assert Repo.get!(User, user.id).email == user.email
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
-  describe "change_driver_password/2" do
-    test "returns a driver changeset" do
-      assert %Ecto.Changeset{} = changeset = Accounts.change_driver_password(%Driver{})
+  describe "change_user_password/2" do
+    test "returns a user changeset" do
+      assert %Ecto.Changeset{} = changeset = Accounts.change_user_password(%User{})
       assert changeset.required == [:password]
     end
   end
 
-  describe "update_driver_password/3" do
+  describe "update_user_password/3" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "validates password", %{driver: driver} do
+    test "validates password", %{user: user} do
       {:error, changeset} =
-        Accounts.update_driver_password(driver, valid_driver_password(), %{
+        Accounts.update_user_password(user, valid_user_password(), %{
           password: "not valid",
           password_confirmation: "another"
         })
@@ -244,205 +244,205 @@ defmodule Mon.AccountsTest do
              } = errors_on(changeset)
     end
 
-    test "validates maximum values for password for security", %{driver: driver} do
+    test "validates maximum values for password for security", %{user: user} do
       too_long = String.duplicate("db", 100)
 
       {:error, changeset} =
-        Accounts.update_driver_password(driver, valid_driver_password(), %{password: too_long})
+        Accounts.update_user_password(user, valid_user_password(), %{password: too_long})
 
       assert "should be at most 80 character(s)" in errors_on(changeset).password
     end
 
-    test "validates current password", %{driver: driver} do
+    test "validates current password", %{user: user} do
       {:error, changeset} =
-        Accounts.update_driver_password(driver, "invalid", %{password: valid_driver_password()})
+        Accounts.update_user_password(user, "invalid", %{password: valid_user_password()})
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
 
-    test "updates the password", %{driver: driver} do
-      {:ok, driver} =
-        Accounts.update_driver_password(driver, valid_driver_password(), %{
+    test "updates the password", %{user: user} do
+      {:ok, user} =
+        Accounts.update_user_password(user, valid_user_password(), %{
           password: "new valid password"
         })
 
-      assert is_nil(driver.password)
-      assert Accounts.get_driver_by_email_and_password(driver.email, "new valid password")
+      assert is_nil(user.password)
+      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
-    test "deletes all tokens for the given driver", %{driver: driver} do
-      _ = Accounts.generate_driver_session_token(driver)
+    test "deletes all tokens for the given user", %{user: user} do
+      _ = Accounts.generate_user_session_token(user)
 
       {:ok, _} =
-        Accounts.update_driver_password(driver, valid_driver_password(), %{
+        Accounts.update_user_password(user, valid_user_password(), %{
           password: "new valid password"
         })
 
-      refute Repo.get_by(DriverToken, driver_id: driver.id)
+      refute Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
-  describe "generate_driver_session_token/1" do
+  describe "generate_user_session_token/1" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "generates a token", %{driver: driver} do
-      token = Accounts.generate_driver_session_token(driver)
-      assert driver_token = Repo.get_by(DriverToken, token: token)
-      assert driver_token.context == "session"
+    test "generates a token", %{user: user} do
+      token = Accounts.generate_user_session_token(user)
+      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token.context == "session"
 
-      # Creating the same token for another driver should fail
+      # Creating the same token for another user should fail
       assert_raise Ecto.ConstraintError, fn ->
-        Repo.insert!(%DriverToken{
-          token: driver_token.token,
-          driver_id: driver_fixture().id,
+        Repo.insert!(%UserToken{
+          token: user_token.token,
+          user_id: user_fixture().id,
           context: "session"
         })
       end
     end
   end
 
-  describe "get_driver_by_session_token/1" do
+  describe "get_user_by_session_token/1" do
     setup do
-      driver = driver_fixture()
-      token = Accounts.generate_driver_session_token(driver)
-      %{driver: driver, token: token}
+      user = user_fixture()
+      token = Accounts.generate_user_session_token(user)
+      %{user: user, token: token}
     end
 
-    test "returns driver by token", %{driver: driver, token: token} do
-      assert session_driver = Accounts.get_driver_by_session_token(token)
-      assert session_driver.id == driver.id
+    test "returns user by token", %{user: user, token: token} do
+      assert session_user = Accounts.get_user_by_session_token(token)
+      assert session_user.id == user.id
     end
 
-    test "does not return driver for invalid token" do
-      refute Accounts.get_driver_by_session_token("oops")
+    test "does not return user for invalid token" do
+      refute Accounts.get_user_by_session_token("oops")
     end
 
-    test "does not return driver for expired token", %{token: token} do
-      {1, nil} = Repo.update_all(DriverToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      refute Accounts.get_driver_by_session_token(token)
+    test "does not return user for expired token", %{token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      refute Accounts.get_user_by_session_token(token)
     end
   end
 
   describe "delete_session_token/1" do
     test "deletes the token" do
-      driver = driver_fixture()
-      token = Accounts.generate_driver_session_token(driver)
+      user = user_fixture()
+      token = Accounts.generate_user_session_token(user)
       assert Accounts.delete_session_token(token) == :ok
-      refute Accounts.get_driver_by_session_token(token)
+      refute Accounts.get_user_by_session_token(token)
     end
   end
 
-  describe "deliver_driver_confirmation_instructions/2" do
+  describe "deliver_user_confirmation_instructions/2" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "sends token through notification", %{driver: driver} do
+    test "sends token through notification", %{user: user} do
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_driver_confirmation_instructions(driver, url)
+        extract_user_token(fn url ->
+          Accounts.deliver_user_confirmation_instructions(user, url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert driver_token = Repo.get_by(DriverToken, token: :crypto.hash(:sha256, token))
-      assert driver_token.driver_id == driver.id
-      assert driver_token.sent_to == driver.email
-      assert driver_token.context == "confirm"
+      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert user_token.user_id == user.id
+      assert user_token.sent_to == user.email
+      assert user_token.context == "confirm"
     end
   end
 
-  describe "confirm_driver/2" do
+  describe "confirm_user/2" do
     setup do
-      driver = driver_fixture()
+      user = user_fixture()
 
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_driver_confirmation_instructions(driver, url)
+        extract_user_token(fn url ->
+          Accounts.deliver_user_confirmation_instructions(user, url)
         end)
 
-      %{driver: driver, token: token}
+      %{user: user, token: token}
     end
 
-    test "confirms the email with a valid token", %{driver: driver, token: token} do
-      assert {:ok, confirmed_driver} = Accounts.confirm_driver(token)
-      assert confirmed_driver.confirmed_at
-      assert confirmed_driver.confirmed_at != driver.confirmed_at
-      assert Repo.get!(Driver, driver.id).confirmed_at
-      refute Repo.get_by(DriverToken, driver_id: driver.id)
+    test "confirms the email with a valid token", %{user: user, token: token} do
+      assert {:ok, confirmed_user} = Accounts.confirm_user(token)
+      assert confirmed_user.confirmed_at
+      assert confirmed_user.confirmed_at != user.confirmed_at
+      assert Repo.get!(User, user.id).confirmed_at
+      refute Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not confirm with invalid token", %{driver: driver} do
-      assert Accounts.confirm_driver("oops") == :error
-      refute Repo.get!(Driver, driver.id).confirmed_at
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not confirm with invalid token", %{user: user} do
+      assert Accounts.confirm_user("oops") == :error
+      refute Repo.get!(User, user.id).confirmed_at
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not confirm email if token expired", %{driver: driver, token: token} do
-      {1, nil} = Repo.update_all(DriverToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      assert Accounts.confirm_driver(token) == :error
-      refute Repo.get!(Driver, driver.id).confirmed_at
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not confirm email if token expired", %{user: user, token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      assert Accounts.confirm_user(token) == :error
+      refute Repo.get!(User, user.id).confirmed_at
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
-  describe "deliver_driver_reset_password_instructions/2" do
+  describe "deliver_user_reset_password_instructions/2" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "sends token through notification", %{driver: driver} do
+    test "sends token through notification", %{user: user} do
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_driver_reset_password_instructions(driver, url)
+        extract_user_token(fn url ->
+          Accounts.deliver_user_reset_password_instructions(user, url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert driver_token = Repo.get_by(DriverToken, token: :crypto.hash(:sha256, token))
-      assert driver_token.driver_id == driver.id
-      assert driver_token.sent_to == driver.email
-      assert driver_token.context == "reset_password"
+      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert user_token.user_id == user.id
+      assert user_token.sent_to == user.email
+      assert user_token.context == "reset_password"
     end
   end
 
-  describe "get_driver_by_reset_password_token/1" do
+  describe "get_user_by_reset_password_token/1" do
     setup do
-      driver = driver_fixture()
+      user = user_fixture()
 
       token =
-        extract_driver_token(fn url ->
-          Accounts.deliver_driver_reset_password_instructions(driver, url)
+        extract_user_token(fn url ->
+          Accounts.deliver_user_reset_password_instructions(user, url)
         end)
 
-      %{driver: driver, token: token}
+      %{user: user, token: token}
     end
 
-    test "returns the driver with valid token", %{driver: %{id: id}, token: token} do
-      assert %Driver{id: ^id} = Accounts.get_driver_by_reset_password_token(token)
-      assert Repo.get_by(DriverToken, driver_id: id)
+    test "returns the user with valid token", %{user: %{id: id}, token: token} do
+      assert %User{id: ^id} = Accounts.get_user_by_reset_password_token(token)
+      assert Repo.get_by(UserToken, user_id: id)
     end
 
-    test "does not return the driver with invalid token", %{driver: driver} do
-      refute Accounts.get_driver_by_reset_password_token("oops")
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not return the user with invalid token", %{user: user} do
+      refute Accounts.get_user_by_reset_password_token("oops")
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
 
-    test "does not return the driver if token expired", %{driver: driver, token: token} do
-      {1, nil} = Repo.update_all(DriverToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
-      refute Accounts.get_driver_by_reset_password_token(token)
-      assert Repo.get_by(DriverToken, driver_id: driver.id)
+    test "does not return the user if token expired", %{user: user, token: token} do
+      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      refute Accounts.get_user_by_reset_password_token(token)
+      assert Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
-  describe "reset_driver_password/2" do
+  describe "reset_user_password/2" do
     setup do
-      %{driver: driver_fixture()}
+      %{user: user_fixture()}
     end
 
-    test "validates password", %{driver: driver} do
+    test "validates password", %{user: user} do
       {:error, changeset} =
-        Accounts.reset_driver_password(driver, %{
+        Accounts.reset_user_password(user, %{
           password: "not valid",
           password_confirmation: "another"
         })
@@ -453,28 +453,28 @@ defmodule Mon.AccountsTest do
              } = errors_on(changeset)
     end
 
-    test "validates maximum values for password for security", %{driver: driver} do
+    test "validates maximum values for password for security", %{user: user} do
       too_long = String.duplicate("db", 100)
-      {:error, changeset} = Accounts.reset_driver_password(driver, %{password: too_long})
+      {:error, changeset} = Accounts.reset_user_password(user, %{password: too_long})
       assert "should be at most 80 character(s)" in errors_on(changeset).password
     end
 
-    test "updates the password", %{driver: driver} do
-      {:ok, updated_driver} = Accounts.reset_driver_password(driver, %{password: "new valid password"})
-      assert is_nil(updated_driver.password)
-      assert Accounts.get_driver_by_email_and_password(driver.email, "new valid password")
+    test "updates the password", %{user: user} do
+      {:ok, updated_user} = Accounts.reset_user_password(user, %{password: "new valid password"})
+      assert is_nil(updated_user.password)
+      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
-    test "deletes all tokens for the given driver", %{driver: driver} do
-      _ = Accounts.generate_driver_session_token(driver)
-      {:ok, _} = Accounts.reset_driver_password(driver, %{password: "new valid password"})
-      refute Repo.get_by(DriverToken, driver_id: driver.id)
+    test "deletes all tokens for the given user", %{user: user} do
+      _ = Accounts.generate_user_session_token(user)
+      {:ok, _} = Accounts.reset_user_password(user, %{password: "new valid password"})
+      refute Repo.get_by(UserToken, user_id: user.id)
     end
   end
 
   describe "inspect/2" do
     test "does not include password" do
-      refute inspect(%Driver{password: "123456"}) =~ "password: \"123456\""
+      refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
   import Mon.AccountsFixtures
@@ -512,7 +512,7 @@ defmodule Mon.AccountsTest do
   describe "get_client!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_client!("11111111-1111-1111-1111-111111111111")
+        Accounts.get_client!(-1)
       end
     end
 
@@ -987,7 +987,7 @@ defmodule Mon.AccountsTest do
   describe "get_organization!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_organization!("11111111-1111-1111-1111-111111111111")
+        Accounts.get_organization!(-1)
       end
     end
 

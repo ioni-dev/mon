@@ -5,7 +5,7 @@ defmodule MonWeb.Router do
 
   import MonWeb.ClientAuth
 
-  import MonWeb.DriverAuth
+  import MonWeb.UserAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -15,7 +15,7 @@ defmodule MonWeb.Router do
     plug :put_secure_browser_headers
     plug :fetch_current_organization
     plug :fetch_current_client
-    plug :fetch_current_driver
+    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -52,34 +52,34 @@ defmodule MonWeb.Router do
   ## Authentication routes
 
   scope "/", MonWeb do
-    pipe_through [:browser, :redirect_if_driver_is_authenticated]
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    get "/drivers/register", DriverRegistrationController, :new
-    post "/drivers/register", DriverRegistrationController, :create
-    get "/drivers/log_in", DriverSessionController, :new
-    post "/drivers/log_in", DriverSessionController, :create
-    get "/drivers/reset_password", DriverResetPasswordController, :new
-    post "/drivers/reset_password", DriverResetPasswordController, :create
-    get "/drivers/reset_password/:token", DriverResetPasswordController, :edit
-    put "/drivers/reset_password/:token", DriverResetPasswordController, :update
+    get "/users/register", UserRegistrationController, :new
+    post "/users/register", UserRegistrationController, :create
+    get "/users/log_in", UserSessionController, :new
+    post "/users/log_in", UserSessionController, :create
+    get "/users/reset_password", UserResetPasswordController, :new
+    post "/users/reset_password", UserResetPasswordController, :create
+    get "/users/reset_password/:token", UserResetPasswordController, :edit
+    put "/users/reset_password/:token", UserResetPasswordController, :update
   end
 
   scope "/", MonWeb do
-    pipe_through [:browser, :require_authenticated_driver]
+    pipe_through [:browser, :require_authenticated_user]
 
-    get "/drivers/settings", DriverSettingsController, :edit
-    put "/drivers/settings/update_password", DriverSettingsController, :update_password
-    put "/drivers/settings/update_email", DriverSettingsController, :update_email
-    get "/drivers/settings/confirm_email/:token", DriverSettingsController, :confirm_email
+    get "/users/settings", UserSettingsController, :edit
+    put "/users/settings/update_password", UserSettingsController, :update_password
+    put "/users/settings/update_email", UserSettingsController, :update_email
+    get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email
   end
 
   scope "/", MonWeb do
     pipe_through [:browser]
 
-    delete "/drivers/log_out", DriverSessionController, :delete
-    get "/drivers/confirm", DriverConfirmationController, :new
-    post "/drivers/confirm", DriverConfirmationController, :create
-    get "/drivers/confirm/:token", DriverConfirmationController, :confirm
+    delete "/users/log_out", UserSessionController, :delete
+    get "/users/confirm", UserConfirmationController, :new
+    post "/users/confirm", UserConfirmationController, :create
+    get "/users/confirm/:token", UserConfirmationController, :confirm
   end
 
   ## Authentication routes

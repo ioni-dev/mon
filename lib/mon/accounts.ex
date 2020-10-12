@@ -5,106 +5,106 @@ defmodule Mon.Accounts do
 
   import Ecto.Query, warn: false
   alias Mon.Repo
-  alias Mon.Accounts.{Driver, DriverToken, DriverNotifier}
+  alias Mon.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 
   @doc """
-  Gets a driver by email.
+  Gets a user by email.
 
   ## Examples
 
-      iex> get_driver_by_email("foo@example.com")
-      %Driver{}
+      iex> get_user_by_email("foo@example.com")
+      %User{}
 
-      iex> get_driver_by_email("unknown@example.com")
+      iex> get_user_by_email("unknown@example.com")
       nil
 
   """
-  def get_driver_by_email(email) when is_binary(email) do
-    Repo.get_by(Driver, email: email)
+  def get_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email)
   end
 
   @doc """
-  Gets a driver by email and password.
+  Gets a user by email and password.
 
   ## Examples
 
-      iex> get_driver_by_email_and_password("foo@example.com", "correct_password")
-      %Driver{}
+      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
 
-      iex> get_driver_by_email_and_password("foo@example.com", "invalid_password")
+      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
       nil
 
   """
-  def get_driver_by_email_and_password(email, password)
+  def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    driver = Repo.get_by(Driver, email: email)
-    if Driver.valid_password?(driver, password), do: driver
+    user = Repo.get_by(User, email: email)
+    if User.valid_password?(user, password), do: user
   end
 
   @doc """
-  Gets a single driver.
+  Gets a single user.
 
-  Raises `Ecto.NoResultsError` if the Driver does not exist.
+  Raises `Ecto.NoResultsError` if the User does not exist.
 
   ## Examples
 
-      iex> get_driver!(123)
-      %Driver{}
+      iex> get_user!(123)
+      %User{}
 
-      iex> get_driver!(456)
+      iex> get_user!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_driver!(id), do: Repo.get!(Driver, id)
+  def get_user!(id), do: Repo.get!(User, id)
 
-  ## Driver registration
+  ## User registration
 
   @doc """
-  Registers a driver.
+  Registers a user.
 
   ## Examples
 
-      iex> register_driver(%{field: value})
-      {:ok, %Driver{}}
+      iex> register_user(%{field: value})
+      {:ok, %User{}}
 
-      iex> register_driver(%{field: bad_value})
+      iex> register_user(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_driver(attrs) do
-    %Driver{}
-    |> Driver.registration_changeset(attrs)
+  def register_user(attrs) do
+    %User{}
+    |> User.registration_changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking driver changes.
+  Returns an `%Ecto.Changeset{}` for tracking user changes.
 
   ## Examples
 
-      iex> change_driver_registration(driver)
-      %Ecto.Changeset{data: %Driver{}}
+      iex> change_user_registration(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_driver_registration(%Driver{} = driver, attrs \\ %{}) do
-    Driver.registration_changeset(driver, attrs)
+  def change_user_registration(%User{} = user, attrs \\ %{}) do
+    User.registration_changeset(user, attrs)
   end
 
   ## Settings
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the driver email.
+  Returns an `%Ecto.Changeset{}` for changing the user email.
 
   ## Examples
 
-      iex> change_driver_email(driver)
-      %Ecto.Changeset{data: %Driver{}}
+      iex> change_user_email(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_driver_email(driver, attrs \\ %{}) do
-    Driver.email_changeset(driver, attrs)
+  def change_user_email(user, attrs \\ %{}) do
+    User.email_changeset(user, attrs)
   end
 
   @doc """
@@ -113,101 +113,101 @@ defmodule Mon.Accounts do
 
   ## Examples
 
-      iex> apply_driver_email(driver, "valid password", %{email: ...})
-      {:ok, %Driver{}}
+      iex> apply_user_email(user, "valid password", %{email: ...})
+      {:ok, %User{}}
 
-      iex> apply_driver_email(driver, "invalid password", %{email: ...})
+      iex> apply_user_email(user, "invalid password", %{email: ...})
       {:error, %Ecto.Changeset{}}
 
   """
-  def apply_driver_email(driver, password, attrs) do
-    driver
-    |> Driver.email_changeset(attrs)
-    |> Driver.validate_current_password(password)
+  def apply_user_email(user, password, attrs) do
+    user
+    |> User.email_changeset(attrs)
+    |> User.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end
 
   @doc """
-  Updates the driver email using the given token.
+  Updates the user email using the given token.
 
-  If the token matches, the driver email is updated and the token is deleted.
+  If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
-  def update_driver_email(driver, token) do
-    context = "change:#{driver.email}"
+  def update_user_email(user, token) do
+    context = "change:#{user.email}"
 
-    with {:ok, query} <- DriverToken.verify_change_email_token_query(token, context),
-         %DriverToken{sent_to: email} <- Repo.one(query),
-         {:ok, _} <- Repo.transaction(driver_email_multi(driver, email, context)) do
+    with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
+         %UserToken{sent_to: email} <- Repo.one(query),
+         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
       :ok
     else
       _ -> :error
     end
   end
 
-  defp driver_email_multi(driver, email, context) do
-    changeset = driver |> Driver.email_changeset(%{email: email}) |> Driver.confirm_changeset()
+  defp user_email_multi(user, email, context) do
+    changeset = user |> User.email_changeset(%{email: email}) |> User.confirm_changeset()
 
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:driver, changeset)
-    |> Ecto.Multi.delete_all(:tokens, DriverToken.driver_and_contexts_query(driver, [context]))
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
   @doc """
-  Delivers the update email instructions to the given driver.
+  Delivers the update email instructions to the given user.
 
   ## Examples
 
-      iex> deliver_update_email_instructions(driver, current_email, &Routes.driver_update_email_url(conn, :edit, &1))
+      iex> deliver_update_email_instructions(user, current_email, &Routes.user_update_email_url(conn, :edit, &1))
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_update_email_instructions(%Driver{} = driver, current_email, update_email_url_fun)
+  def deliver_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
       when is_function(update_email_url_fun, 1) do
-    {encoded_token, driver_token} = DriverToken.build_email_token(driver, "change:#{current_email}")
+    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
 
-    Repo.insert!(driver_token)
-    DriverNotifier.deliver_update_email_instructions(driver, update_email_url_fun.(encoded_token))
+    Repo.insert!(user_token)
+    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the driver password.
+  Returns an `%Ecto.Changeset{}` for changing the user password.
 
   ## Examples
 
-      iex> change_driver_password(driver)
-      %Ecto.Changeset{data: %Driver{}}
+      iex> change_user_password(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_driver_password(driver, attrs \\ %{}) do
-    Driver.password_changeset(driver, attrs)
+  def change_user_password(user, attrs \\ %{}) do
+    User.password_changeset(user, attrs)
   end
 
   @doc """
-  Updates the driver password.
+  Updates the user password.
 
   ## Examples
 
-      iex> update_driver_password(driver, "valid password", %{password: ...})
-      {:ok, %Driver{}}
+      iex> update_user_password(user, "valid password", %{password: ...})
+      {:ok, %User{}}
 
-      iex> update_driver_password(driver, "invalid password", %{password: ...})
+      iex> update_user_password(user, "invalid password", %{password: ...})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_driver_password(driver, password, attrs) do
+  def update_user_password(user, password, attrs) do
     changeset =
-      driver
-      |> Driver.password_changeset(attrs)
-      |> Driver.validate_current_password(password)
+      user
+      |> User.password_changeset(attrs)
+      |> User.validate_current_password(password)
 
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:driver, changeset)
-    |> Ecto.Multi.delete_all(:tokens, DriverToken.driver_and_contexts_query(driver, :all))
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
     |> Repo.transaction()
     |> case do
-      {:ok, %{driver: driver}} -> {:ok, driver}
-      {:error, :driver, changeset, _} -> {:error, changeset}
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -216,17 +216,17 @@ defmodule Mon.Accounts do
   @doc """
   Generates a session token.
   """
-  def generate_driver_session_token(driver) do
-    {token, driver_token} = DriverToken.build_session_token(driver)
-    Repo.insert!(driver_token)
+  def generate_user_session_token(user) do
+    {token, user_token} = UserToken.build_session_token(user)
+    Repo.insert!(user_token)
     token
   end
 
   @doc """
-  Gets the driver with the given signed token.
+  Gets the user with the given signed token.
   """
-  def get_driver_by_session_token(token) do
-    {:ok, query} = DriverToken.verify_session_token_query(token)
+  def get_user_by_session_token(token) do
+    {:ok, query} = UserToken.verify_session_token_query(token)
     Repo.one(query)
   end
 
@@ -234,116 +234,116 @@ defmodule Mon.Accounts do
   Deletes the signed token with the given context.
   """
   def delete_session_token(token) do
-    Repo.delete_all(DriverToken.token_and_context_query(token, "session"))
+    Repo.delete_all(UserToken.token_and_context_query(token, "session"))
     :ok
   end
 
   ## Confirmation
 
   @doc """
-  Delivers the confirmation email instructions to the given driver.
+  Delivers the confirmation email instructions to the given user.
 
   ## Examples
 
-      iex> deliver_driver_confirmation_instructions(driver, &Routes.driver_confirmation_url(conn, :confirm, &1))
+      iex> deliver_user_confirmation_instructions(user, &Routes.user_confirmation_url(conn, :confirm, &1))
       {:ok, %{to: ..., body: ...}}
 
-      iex> deliver_driver_confirmation_instructions(confirmed_driver, &Routes.driver_confirmation_url(conn, :confirm, &1))
+      iex> deliver_user_confirmation_instructions(confirmed_user, &Routes.user_confirmation_url(conn, :confirm, &1))
       {:error, :already_confirmed}
 
   """
-  def deliver_driver_confirmation_instructions(%Driver{} = driver, confirmation_url_fun)
+  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
-    if driver.confirmed_at do
+    if user.confirmed_at do
       {:error, :already_confirmed}
     else
-      {encoded_token, driver_token} = DriverToken.build_email_token(driver, "confirm")
-      Repo.insert!(driver_token)
-      DriverNotifier.deliver_confirmation_instructions(driver, confirmation_url_fun.(encoded_token))
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
+      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
     end
   end
 
   @doc """
-  Confirms a driver by the given token.
+  Confirms a user by the given token.
 
-  If the token matches, the driver account is marked as confirmed
+  If the token matches, the user account is marked as confirmed
   and the token is deleted.
   """
-  def confirm_driver(token) do
-    with {:ok, query} <- DriverToken.verify_email_token_query(token, "confirm"),
-         %Driver{} = driver <- Repo.one(query),
-         {:ok, %{driver: driver}} <- Repo.transaction(confirm_driver_multi(driver)) do
-      {:ok, driver}
+  def confirm_user(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
+         %User{} = user <- Repo.one(query),
+         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
+      {:ok, user}
     else
       _ -> :error
     end
   end
 
-  defp confirm_driver_multi(driver) do
+  defp confirm_user_multi(user) do
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:driver, Driver.confirm_changeset(driver))
-    |> Ecto.Multi.delete_all(:tokens, DriverToken.driver_and_contexts_query(driver, ["confirm"]))
+    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
   ## Reset password
 
   @doc """
-  Delivers the reset password email to the given driver.
+  Delivers the reset password email to the given user.
 
   ## Examples
 
-      iex> deliver_driver_reset_password_instructions(driver, &Routes.driver_reset_password_url(conn, :edit, &1))
+      iex> deliver_user_reset_password_instructions(user, &Routes.user_reset_password_url(conn, :edit, &1))
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_driver_reset_password_instructions(%Driver{} = driver, reset_password_url_fun)
+  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    {encoded_token, driver_token} = DriverToken.build_email_token(driver, "reset_password")
-    Repo.insert!(driver_token)
-    DriverNotifier.deliver_reset_password_instructions(driver, reset_password_url_fun.(encoded_token))
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    Repo.insert!(user_token)
+    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
   end
 
   @doc """
-  Gets the driver by reset password token.
+  Gets the user by reset password token.
 
   ## Examples
 
-      iex> get_driver_by_reset_password_token("validtoken")
-      %Driver{}
+      iex> get_user_by_reset_password_token("validtoken")
+      %User{}
 
-      iex> get_driver_by_reset_password_token("invalidtoken")
+      iex> get_user_by_reset_password_token("invalidtoken")
       nil
 
   """
-  def get_driver_by_reset_password_token(token) do
-    with {:ok, query} <- DriverToken.verify_email_token_query(token, "reset_password"),
-         %Driver{} = driver <- Repo.one(query) do
-      driver
+  def get_user_by_reset_password_token(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
+         %User{} = user <- Repo.one(query) do
+      user
     else
       _ -> nil
     end
   end
 
   @doc """
-  Resets the driver password.
+  Resets the user password.
 
   ## Examples
 
-      iex> reset_driver_password(driver, %{password: "new long password", password_confirmation: "new long password"})
-      {:ok, %Driver{}}
+      iex> reset_user_password(user, %{password: "new long password", password_confirmation: "new long password"})
+      {:ok, %User{}}
 
-      iex> reset_driver_password(driver, %{password: "valid", password_confirmation: "not the same"})
+      iex> reset_user_password(user, %{password: "valid", password_confirmation: "not the same"})
       {:error, %Ecto.Changeset{}}
 
   """
-  def reset_driver_password(driver, attrs) do
+  def reset_user_password(user, attrs) do
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:driver, Driver.password_changeset(driver, attrs))
-    |> Ecto.Multi.delete_all(:tokens, DriverToken.driver_and_contexts_query(driver, :all))
+    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
     |> Repo.transaction()
     |> case do
-      {:ok, %{driver: driver}} -> {:ok, driver}
-      {:error, :driver, changeset, _} -> {:error, changeset}
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
   alias Mon.Accounts.{Client, ClientToken, ClientNotifier}

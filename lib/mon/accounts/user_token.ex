@@ -1,4 +1,4 @@
-defmodule Mon.Accounts.OrganizationToken do
+defmodule Mon.Accounts.UserToken do
   use Ecto.Schema
   import Ecto.Query
 
@@ -12,11 +12,11 @@ defmodule Mon.Accounts.OrganizationToken do
   @change_email_validity_in_days 7
   @session_validity_in_days 60
 
-  schema "organizations_tokens" do
+  schema "users_tokens" do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
-    belongs_to :organization, Mon.Accounts.Organization
+    belongs_to :user, Mon.Accounts.User
 
     timestamps(updated_at: false)
   end
@@ -26,22 +26,22 @@ defmodule Mon.Accounts.OrganizationToken do
   such as session or cookie. As they are signed, those
   tokens do not need to be hashed.
   """
-  def build_session_token(organization) do
+  def build_session_token(user) do
     token = :crypto.strong_rand_bytes(@rand_size)
-    {token, %Mon.Accounts.OrganizationToken{token: token, context: "session", organization_id: organization.id}}
+    {token, %Mon.Accounts.UserToken{token: token, context: "session", user_id: user.id}}
   end
 
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 
-  The query returns the organization found by the token.
+  The query returns the user found by the token.
   """
   def verify_session_token_query(token) do
     query =
       from token in token_and_context_query(token, "session"),
-        join: organization in assoc(token, :organization),
+        join: user in assoc(token, :user),
         where: token.inserted_at > ago(@session_validity_in_days, "day"),
-        select: organization
+        select: user
 
     {:ok, query}
   end
@@ -49,32 +49,32 @@ defmodule Mon.Accounts.OrganizationToken do
   @doc """
   Builds a token with a hashed counter part.
 
-  The non-hashed token is sent to the organization email while the
+  The non-hashed token is sent to the user email while the
   hashed part is stored in the database, to avoid reconstruction.
-  The token is valid for a week as long as organizations don't change
+  The token is valid for a week as long as users don't change
   their email.
   """
-  def build_email_token(organization, context) do
-    build_hashed_token(organization, context, organization.email)
+  def build_email_token(user, context) do
+    build_hashed_token(user, context, user.email)
   end
 
-  defp build_hashed_token(organization, context, sent_to) do
+  defp build_hashed_token(user, context, sent_to) do
     token = :crypto.strong_rand_bytes(@rand_size)
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
     {Base.url_encode64(token, padding: false),
-     %Mon.Accounts.OrganizationToken{
+     %Mon.Accounts.UserToken{
        token: hashed_token,
        context: context,
        sent_to: sent_to,
-       organization_id: organization.id
+       user_id: user.id
      }}
   end
 
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 
-  The query returns the organization found by the token.
+  The query returns the user found by the token.
   """
   def verify_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
@@ -84,9 +84,9 @@ defmodule Mon.Accounts.OrganizationToken do
 
         query =
           from token in token_and_context_query(hashed_token, context),
-            join: organization in assoc(token, :organization),
-            where: token.inserted_at > ago(^days, "day") and token.sent_to == organization.email,
-            select: organization
+            join: user in assoc(token, :user),
+            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
+            select: user
 
         {:ok, query}
 
@@ -101,7 +101,7 @@ defmodule Mon.Accounts.OrganizationToken do
   @doc """
   Checks if the token is valid and returns its underlying lookup query.
 
-  The query returns the organization token record.
+  The query returns the user token record.
   """
   def verify_change_email_token_query(token, context) do
     case Base.url_decode64(token, padding: false) do
@@ -123,17 +123,17 @@ defmodule Mon.Accounts.OrganizationToken do
   Returns the given token with the given context.
   """
   def token_and_context_query(token, context) do
-    from Mon.Accounts.OrganizationToken, where: [token: ^token, context: ^context]
+    from Mon.Accounts.UserToken, where: [token: ^token, context: ^context]
   end
 
   @doc """
-  Gets all tokens for the given organization for the given contexts.
+  Gets all tokens for the given user for the given contexts.
   """
-  def organization_and_contexts_query(organization, :all) do
-    from t in Mon.Accounts.OrganizationToken, where: t.organization_id == ^organization.id
+  def user_and_contexts_query(user, :all) do
+    from t in Mon.Accounts.UserToken, where: t.user_id == ^user.id
   end
 
-  def organization_and_contexts_query(organization, [_ | _] = contexts) do
-    from t in Mon.Accounts.OrganizationToken, where: t.organization_id == ^organization.id and t.context in ^contexts
+  def user_and_contexts_query(user, [_ | _] = contexts) do
+    from t in Mon.Accounts.UserToken, where: t.user_id == ^user.id and t.context in ^contexts
   end
 end
